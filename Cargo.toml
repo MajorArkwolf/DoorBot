@@ -1,0 +1,18 @@
+[package]
+name = "door_bot"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+tokio = { version = "1.20.1", features = ["full"] }
+rfid-debug = "0.0.7"
+color-eyre = "0.6"
+bit_field = "0.10"
+bitvec = "1"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features=["env-filter"] }
+
+[target.'cfg(arm)'.dependencies]
+rppal = "0.13"
