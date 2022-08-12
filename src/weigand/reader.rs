@@ -8,7 +8,6 @@ use color_eyre::eyre::Result;
 use tokio::sync::mpsc;
 use tokio::sync::mpsc::Receiver;
 use tracing::{debug, error};
-use tracing_subscriber::field::debug;
 
 enum Transmission {
     None,
@@ -40,6 +39,8 @@ impl WeigandReader {
             };
         };
 
+        controller.set_async_interrupt(zero_pin, Trigger::FallingEdge, Box::new(zero_call))?;
+
         let one_call = move |level: Level| {
             match level {
                 Level::Low => match one_tx.try_send(1) {
@@ -51,8 +52,6 @@ impl WeigandReader {
                 Level::High => {}
             };
         };
-
-        controller.set_async_interrupt(zero_pin, Trigger::FallingEdge, Box::new(zero_call))?;
         controller.set_async_interrupt(one_pin, Trigger::FallingEdge, Box::new(one_call))?;
 
         Ok(Self { rx })
@@ -72,7 +71,7 @@ impl WeigandReader {
                 },
             }
         }
-        Ok(())
+        //Ok(())
     }
 
     async fn get_payload(&mut self) -> Result<Transmission> {

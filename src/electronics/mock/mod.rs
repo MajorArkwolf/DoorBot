@@ -6,7 +6,7 @@ use crate::electronics::IElectronicController;
 use crate::electronics::PinHandle;
 use crate::electronics::PinPull;
 use crate::electronics::Trigger;
-use bitvec::prelude::*;
+use bit_field::BitField;
 use color_eyre::eyre::Result;
 use tokio::sync::Mutex;
 use tokio::task::JoinHandle;
@@ -17,21 +17,24 @@ use super::Level;
 pub struct Controller {
     input_pins: Vec<u8>,
     call_back: Arc<Mutex<Vec<Callback>>>,
-    background_task: JoinHandle<()>,
+    _background_task: JoinHandle<()>,
 }
 
 impl Controller {
     pub fn new() -> Result<Self> {
         let call_back: Arc<Mutex<Vec<Callback>>> = Arc::new(Mutex::new(vec![]));
         let background_callback = call_back.clone();
-        let test_code: u32 = 13175734; // Site code: 201 Card Number: 02998
-        let background_task = tokio::task::spawn(async move {
+        //let test_code: u32 = 13175734; // Site code: 201 Card Number: 02998
+        let test_code: u32 = 2802361858; // From rfid_converter_tests.py
+        let _background_task = tokio::task::spawn(async move {
             loop {
                 let mut x = background_callback.lock().await;
+
                 if x.len() > 1 {
                     // Send code 13175734 or 110010010000101110110110
-                    for i in test_code.view_bits::<Msb0>() {
-                        if !*i {
+                    for i in 0usize..32usize {
+                        let bit = test_code.get_bit(31 - i);
+                        if !bit {
                             x[0](Level::Low);
                             x[1](Level::High);
                         } else {
@@ -49,7 +52,7 @@ impl Controller {
         Ok(Self {
             input_pins: vec![],
             call_back,
-            background_task,
+            _background_task,
         })
     }
 }

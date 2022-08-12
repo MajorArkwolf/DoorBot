@@ -1,40 +1,64 @@
 pub mod reader;
 use bit_field::BitField;
-use color_eyre::eyre::{eyre, Result, WrapErr};
-use rfid_debug::WiegandFormat;
+use color_eyre::eyre::{eyre, Result};
 
 #[derive(Debug)]
 pub struct Weigand {
-    facility_code: u8,
-    card_number: u16,
+    facility_code: u16,
+    card_number: u32,
 }
 
 impl Weigand {
     pub fn new(data: u32) -> Result<Self> {
-        let standard_format = WiegandFormat {
-            parity_even: 0,
-            parity_odd: 25,
-            card_number: (0, 16),    // bit range [lower, upper)
-            facility_code: (16, 24), // bit range [lower, upper)
-        };
+        let parity_even = bit_field::BitField::get_bit(&data, 0) as bool;
+        let parity_odd = bit_field::BitField::get_bit(&data, 31) as bool;
 
-        let facility_code = data.get_bits(16..24) as u8;
-        let card_number = data.get_bits(0..16) as u16;
+        let even_calc_bit = (Weigand::count_ones(data, 1, 17) % 2) == 0;
+        let odd_calc_bit = (Weigand::count_ones(data, 18, 30) % 2) == 1;
 
-        let parity_even = data.get_bit(0) as u8;
-        let parity_odd = data.get_bit(25) as u8;
+        if parity_even != even_calc_bit {
+            return Err(eyre!(
+                "odd parity bit was incorrect, Expected: {}, Calculated: {}",
+                parity_even,
+                even_calc_bit,
+            ));
+        }
 
-        Ok(Self {
-            facility_code,
-            card_number,
-        })
+        if parity_odd != odd_calc_bit {
+            return Err(eyre!(
+                "odd parity bit was incorrect, Expected: {}, Calculated: {}",
+                parity_odd,
+                odd_calc_bit,
+            ));
+        }
+        Ok(Weigand::new_unchecked(data))
     }
 
-    pub fn get_facility_code(&self) -> u8 {
+    pub fn new_unchecked(data: u32) -> Self {
+        let facility_code = data.get_bits(1..8) as u16;
+        let card_number = data.get_bits(9..30) as u32;
+
+        Self {
+            facility_code,
+            card_number,
+        }
+    }
+
+    fn count_ones(data: u32, start_index: usize, end_index: usize) -> usize {
+        let mut counter: usize = 0;
+        for i in start_index..end_index {
+            if data.get_bit(i) {
+                counter += 1;
+            }
+        }
+        counter
+    }
+
+    pub fn get_facility_code(&self) -> u16 {
         self.facility_code
     }
 
-    pub fn get_card_number(&self) -> u16 {
+    pub fn get_card_number(&self) -> u32 {
         self.card_number
     }
 }
