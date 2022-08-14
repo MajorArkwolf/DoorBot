@@ -25,7 +25,7 @@ impl Controller {
         Ok(Self {
             gpio: Gpio::new()?,
             input_pins: vec![],
-            output_pins: Vec::<OutputPinWrapper>,
+            output_pins: vec![],
         })
     }
 }
