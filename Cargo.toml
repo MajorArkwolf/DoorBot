@@ -18,5 +18,5 @@ serde_json = "1"
 serde_with = {version = "2"}
 byteorder = "1"
 
-[target.'cfg(linux)'.dependencies]
+[target.'cfg(target_arch = "aarch64")'.dependencies]
 rppal = "0.13"

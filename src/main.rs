@@ -11,12 +11,12 @@ use tracing::{debug, info};
 
 use crate::artifactory::keys::weigand_to_key;
 
-#[cfg(target_os = "linux")]
+#[cfg(target_arch = "aarch64")]
 fn generate() -> Result<Box<dyn IElectronicController>> {
     Ok(Box::new(electronics::pi::controller::Controller::new()?))
 }
 
-#[cfg(not(target_os = "linux"))]
+#[cfg(not(target_arch = "aarch64"))]
 fn generate() -> Result<Box<dyn IElectronicController>> {
     Ok(Box::new(electronics::mock::Controller::new()?))
 }
