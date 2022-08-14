@@ -22,7 +22,8 @@ pub struct KeyConfig {
 pub struct Key {
     pub name: String,
     pub groups: Vec<String>,
-    pub door: u32,
+    #[serde(rename = "door")]
+    pub door_id: u32,
 }
 
 impl Key {
@@ -30,8 +31,8 @@ impl Key {
         &self.name
     }
 
-    pub fn get_door(&self) -> u32 {
-        self.door
+    pub fn get_door_id(&self) -> u32 {
+        self.door_id
     }
 }
 

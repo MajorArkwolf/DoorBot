@@ -12,6 +12,7 @@ use rppal::gpio::OutputPin;
 pub struct Controller {
     gpio: Gpio,
     input_pins: Vec<InputPin>,
+    output_pins: Vec<OutputPin>,
 }
 
 impl Controller {
@@ -20,10 +21,6 @@ impl Controller {
             gpio: Gpio::new()?,
             input_pins: vec![],
         })
-    }
-
-    pub fn setup_output_pin(&mut self, pin_num: u8) -> Result<OutputPin> {
-        Ok(self.gpio.get(pin_num)?.into_output())
     }
 }
 
@@ -37,7 +34,7 @@ impl IElectronicController for Controller {
 
         self.input_pins.push(input_pin);
 
-        Ok(PinHandle::new(self.input_pins.len() - 1))
+        Ok(InputPinHandle::new(self.input_pins.len() - 1))
     }
 
     fn set_async_interrupt(
@@ -62,5 +59,11 @@ impl IElectronicController for Controller {
 
         self.input_pins[pin_handle.get_id()].set_async_interrupt(pi_trigger, pi_callback)?;
         Ok(())
+    }
+
+    fn setup_output_pin(&mut self, pin_num: u8) -> Result<OutputPinHandle> {
+        let output_pin  = self.gpio.get(pin_num)?.into_output();
+        self.output_pins.push(output_pin);
+        Ok(OutputPinHandle::new(self.output_pins.len() - 1))
     }
 }

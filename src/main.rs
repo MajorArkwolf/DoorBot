@@ -2,6 +2,7 @@ pub mod artifactory;
 pub mod electronics;
 pub mod timer;
 pub mod weigand;
+pub mod door;
 
 use color_eyre::eyre::Result;
 use electronics::IElectronicController;

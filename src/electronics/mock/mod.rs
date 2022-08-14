@@ -3,7 +3,7 @@ use std::time::Duration;
 
 use crate::electronics::Callback;
 use crate::electronics::IElectronicController;
-use crate::electronics::PinHandle;
+use crate::electronics::InputPinHandle;
 use crate::electronics::PinPull;
 use crate::electronics::Trigger;
 use bit_field::BitField;
@@ -13,9 +13,11 @@ use tokio::task::JoinHandle;
 use tracing::debug;
 
 use super::Level;
+use super::OutputPinHandle;
 
 pub struct Controller {
     input_pins: Vec<u8>,
+    output_pins: Vec<u8>,
     call_back: Arc<Mutex<Vec<Callback>>>,
     _background_task: JoinHandle<()>,
 }
@@ -51,6 +53,7 @@ impl Controller {
 
         Ok(Self {
             input_pins: vec![],
+            output_pins: vec![],
             call_back,
             _background_task,
         })
@@ -58,15 +61,15 @@ impl Controller {
 }
 
 impl IElectronicController for Controller {
-    fn setup_input_pin(&mut self, pin_num: u8, _pin_pull: PinPull) -> Result<PinHandle> {
+    fn setup_input_pin(&mut self, pin_num: u8, _pin_pull: PinPull) -> Result<InputPinHandle> {
         self.input_pins.push(pin_num);
 
-        Ok(PinHandle::new(self.input_pins.len() - 1))
+        Ok(InputPinHandle::new(self.input_pins.len() - 1))
     }
 
     fn set_async_interrupt(
         &mut self,
-        _pin_handle: PinHandle,
+        _pin_handle: InputPinHandle,
         _trigger: Trigger,
         callback: Callback,
     ) -> Result<()> {
@@ -77,5 +80,10 @@ impl IElectronicController for Controller {
         });
 
         Ok(())
+    }
+
+    fn setup_output_pin(&mut self, pin_num: u8) -> Result<OutputPinHandle> {
+        self.output_pins.push(pin_num);
+        Ok(OutputPinHandle::new(self.output_pins.len() - 1))
     }
 }

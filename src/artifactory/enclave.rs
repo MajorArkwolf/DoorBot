@@ -1,4 +1,4 @@
-use crate::weigand::Weigand;
+use crate::{weigand::Weigand, door::Door};
 
 use super::keys::{weigand_to_key, Key, KeyConfig, Keys};
 use color_eyre::eyre::Result;
@@ -6,6 +6,12 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs::File;
 use tracing::{debug, info};
+
+pub enum DoorAuthResponse {
+    Success,
+    UserNotAuthorised,
+    DoorIdNotFound,
+}
 
 #[derive(Serialize, Deserialize, Debug)]
 struct JsonFile {
@@ -50,6 +56,7 @@ pub struct AuthCredential {
 pub struct Enclave {
     credentials: Option<AuthCredential>,
     keys: HashMap<u64, Key>,
+    doors: Vec<Door>,
 }
 
 impl Enclave {
@@ -71,8 +78,9 @@ impl Enclave {
 
         let keys: Keys = serde_json::from_reader(File::open("./config/enclave_keys.json")?)?;
         let keys = keys.get_keys()?;
+        let doors: Vec<Door> = vec![];
         debug!("{:?}", keys);
-        Ok(Self { credentials, keys })
+        Ok(Self { credentials, keys, doors })
     }
 
     pub fn update_files(&mut self) -> Result<()> {
@@ -97,9 +105,9 @@ impl Enclave {
                     "User {} with id {}, is attempting to open door {}",
                     user.get_name(),
                     key_code,
-                    user.get_door()
+                    user.get_door_id()
                 );
-                user.door == door_id
+                user.door_id == door_id
             }
             None => false,
         }
@@ -107,6 +115,21 @@ impl Enclave {
 
     pub fn weigand_auth_check(&self, key_code: &Weigand, door_id: u32) -> bool {
         self.key_to_door_check(weigand_to_key(key_code), door_id)
+    }
+
+    pub fn weigand_open_door_request(&self, key_code: &Weigand, door_id: u32) -> Result<DoorAuthResponse> {
+        if self.weigand_auth_check(key_code, door_id) {
+            for door in &self.doors {
+                if door.get_door_id() == door_id {
+                    door.open_door();
+                    return Ok(DoorAuthResponse::Success);
+                }
+            }
+            return Ok(DoorAuthResponse::DoorIdNotFound);
+        } else {
+            Ok(DoorAuthResponse::UserNotAuthorised)
+        }
+        
     }
 
     pub fn run() {}
