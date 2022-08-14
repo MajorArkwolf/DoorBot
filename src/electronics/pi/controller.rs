@@ -10,6 +10,7 @@ use rppal::gpio::InputPin;
 use rppal::gpio::OutputPin;
 use super::OutputPinHandle;
 use super::OutputPinWrapper;
+use tokio::task::JoinHandle;
 
 
 pub struct Controller {
@@ -23,6 +24,7 @@ impl Controller {
         Ok(Self {
             gpio: Gpio::new()?,
             input_pins: vec![],
+            output_pins: Vec<OutputPinWrapper>,
         })
     }
 }
