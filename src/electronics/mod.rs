@@ -1,6 +1,6 @@
 pub mod mock;
 
-#[cfg(target_os = "arm")]
+#[cfg(target_os = "linux")]
 pub mod pi;
 use color_eyre::eyre::{eyre, Context, Result};
 use tokio::task::JoinHandle;

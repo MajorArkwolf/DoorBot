@@ -8,6 +8,9 @@ use color_eyre::eyre::Result;
 use rppal::gpio::Gpio;
 use rppal::gpio::InputPin;
 use rppal::gpio::OutputPin;
+use super::OutputPinHandle;
+use super::OutputPinWrapper;
+
 
 pub struct Controller {
     gpio: Gpio,
