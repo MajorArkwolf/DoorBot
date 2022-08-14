@@ -68,10 +68,9 @@ impl IElectronicController for Controller {
     }
 
     fn setup_output_pin(&mut self, pin_num: u8) -> Result<OutputPinHandle> {
-        let output_pin = self.gpio.get(pin_num)?.into_output();
+        let mut output_pin = self.gpio.get(pin_num)?.into_output();
         let (tx, mut rx) = watch::channel(Level::Low);
         let task: JoinHandle<Result<()>> = tokio::task::spawn(async move {
-            let pin_num = pin_num;
             loop {
                 if rx.has_changed()? {
                     let set_pin_high = rx.borrow_and_update();
