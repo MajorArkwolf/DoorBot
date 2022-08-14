@@ -7,9 +7,9 @@ use color_eyre::eyre::Result;
 use rppal::gpio::Gpio;
 use rppal::gpio::InputPin;
 use rppal::gpio::OutputPin;
-use super::InputPinHandle;
-use super::OutputPinHandle;
-use super::OutputPinWrapper;
+use super::super::InputPinHandle;
+use super::super::OutputPinHandle;
+use super::super::OutputPinWrapper;
 use tokio::task::JoinHandle;
 use tokio::sync::watch;
 
@@ -25,7 +25,7 @@ impl Controller {
         Ok(Self {
             gpio: Gpio::new()?,
             input_pins: vec![],
-            output_pins: Vec<OutputPinWrapper>,
+            output_pins: Vec::<OutputPinWrapper>,
         })
     }
 }
