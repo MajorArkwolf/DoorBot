@@ -31,7 +31,7 @@ impl Controller {
 }
 
 impl IElectronicController for Controller {
-    fn setup_input_pin(&mut self, pin_num: u8, pin_pull: PinPull) -> Result<PinHandle> {
+    fn setup_input_pin(&mut self, pin_num: u8, pin_pull: PinPull) -> Result<InputPinHandle> {
         let input_pin = match pin_pull {
             PinPull::PullUp => self.gpio.get(pin_num)?.into_input_pullup(),
             PinPull::PullDown => self.gpio.get(pin_num)?.into_input_pulldown(),
@@ -45,7 +45,7 @@ impl IElectronicController for Controller {
 
     fn set_async_interrupt(
         &mut self,
-        pin_handle: PinHandle,
+        pin_handle: InputPinHandle,
         trigger: Trigger,
         mut callback: Callback,
     ) -> Result<()> {
