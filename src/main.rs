@@ -13,7 +13,7 @@ use crate::artifactory::keys::weigand_to_key;
 
 #[cfg(target_os = "linux")]
 fn generate() -> Result<Box<dyn IElectronicController>> {
-    Box::new(electronics::pi::controller::Controller::new()?)
+    Ok(Box::new(electronics::pi::controller::Controller::new()?))
 }
 
 #[cfg(not(target_os = "linux"))]
