@@ -8,9 +8,11 @@ use color_eyre::eyre::Result;
 use rppal::gpio::Gpio;
 use rppal::gpio::InputPin;
 use rppal::gpio::OutputPin;
+use super::InputPinHandle;
 use super::OutputPinHandle;
 use super::OutputPinWrapper;
 use tokio::task::JoinHandle;
+use tokio::sync::watch;
 
 
 pub struct Controller {
