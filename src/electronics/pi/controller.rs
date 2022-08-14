@@ -12,7 +12,7 @@ use rppal::gpio::OutputPin;
 pub struct Controller {
     gpio: Gpio,
     input_pins: Vec<InputPin>,
-    output_pins: Vec<OutputPin>,
+    output_pins: Vec<OutputPinWrapper>,
 }
 
 impl Controller {
@@ -62,8 +62,23 @@ impl IElectronicController for Controller {
     }
 
     fn setup_output_pin(&mut self, pin_num: u8) -> Result<OutputPinHandle> {
-        let output_pin  = self.gpio.get(pin_num)?.into_output();
-        self.output_pins.push(output_pin);
-        Ok(OutputPinHandle::new(self.output_pins.len() - 1))
+        let output_pin = self.gpio.get(pin_num)?.into_output();
+        let (tx, mut rx) = watch::channel(Level::Low);
+        let task: JoinHandle<Result<()>> = tokio::task::spawn(async move {
+            let pin_num = pin_num;
+            loop {
+                if rx.has_changed()? {
+                    let set_pin_high = rx.borrow_and_update();
+                    match *set_pin_high {
+                        Level::High => output_pin.set_high(),
+                        Level::Low => output_pin.set_low(),
+                    }
+                }
+            }
+        });
+        let pin_wrapper = OutputPinWrapper::new(task);
+
+        self.output_pins.push(pin_wrapper);
+        Ok(OutputPinHandle::new(self.output_pins.len() - 1, tx))
     }
 }

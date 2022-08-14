@@ -1,8 +1,8 @@
 pub mod artifactory;
+pub mod door;
 pub mod electronics;
 pub mod timer;
 pub mod weigand;
-pub mod door;
 
 use color_eyre::eyre::Result;
 use electronics::IElectronicController;
@@ -26,15 +26,23 @@ async fn main() -> Result<()> {
     color_eyre::install()?;
     tracing_subscriber::fmt::init();
 
-    let enclave = artifactory::enclave::Enclave::load()?;
+    let mut enclave = artifactory::enclave::Enclave::load()?;
     info!("Loaded the Enclave");
 
     const GPIO_ZERO_LINE: u8 = 0;
     const GPIO_ONE_LINE: u8 = 1;
+    const GPIO_RELAY_PIN: u8 = 2;
 
     let mut controller = generate()?;
     let mut reader =
         weigand::reader::WeigandReader::new(GPIO_ZERO_LINE, GPIO_ONE_LINE, &mut controller)?;
+
+    let front_door = door::Door::new(
+        controller.setup_output_pin(GPIO_RELAY_PIN)?,
+        1,
+        tokio::time::Duration::new(5, 0),
+    );
+    enclave.register_door(front_door);
 
     let (tx, mut rx) = watch::channel::<weigand::Weigand>(weigand::Weigand::new_unchecked(0));
 
@@ -53,9 +61,7 @@ async fn main() -> Result<()> {
                 message.get_card_number()
             );
             debug!("Final Code: {}", weigand_to_key(&message));
-            if enclave.weigand_auth_check(&message, 1) {
-                debug!("Opening door");
-            }
+            enclave.weigand_open_door_request(&message, 1)?;
         }
     }
 }

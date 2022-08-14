@@ -1,4 +1,4 @@
-use crate::{weigand::Weigand, door::Door};
+use crate::{door::Door, weigand::Weigand};
 
 use super::keys::{weigand_to_key, Key, KeyConfig, Keys};
 use color_eyre::eyre::Result;
@@ -10,6 +10,7 @@ use tracing::{debug, info};
 pub enum DoorAuthResponse {
     Success,
     UserNotAuthorised,
+    KeyNotFound,
     DoorIdNotFound,
 }
 
@@ -80,7 +81,15 @@ impl Enclave {
         let keys = keys.get_keys()?;
         let doors: Vec<Door> = vec![];
         debug!("{:?}", keys);
-        Ok(Self { credentials, keys, doors })
+        Ok(Self {
+            credentials,
+            keys,
+            doors,
+        })
+    }
+
+    pub fn register_door(&mut self, door: Door) {
+        self.doors.push(door)
     }
 
     pub fn update_files(&mut self) -> Result<()> {
@@ -113,23 +122,42 @@ impl Enclave {
         }
     }
 
-    pub fn weigand_auth_check(&self, key_code: &Weigand, door_id: u32) -> bool {
-        self.key_to_door_check(weigand_to_key(key_code), door_id)
+    pub fn weigand_auth_check(&self, key_code: &Weigand) -> Option<(u64, &Key)> {
+        let raw_key_code = weigand_to_key(key_code);
+        self.keys.get(&raw_key_code).map(|key| (raw_key_code, key))
     }
 
-    pub fn weigand_open_door_request(&self, key_code: &Weigand, door_id: u32) -> Result<DoorAuthResponse> {
-        if self.weigand_auth_check(key_code, door_id) {
-            for door in &self.doors {
-                if door.get_door_id() == door_id {
-                    door.open_door();
-                    return Ok(DoorAuthResponse::Success);
+    pub fn weigand_open_door_request(
+        &self,
+        key_code: &Weigand,
+        door_id: u32,
+    ) -> Result<DoorAuthResponse> {
+        match self.weigand_auth_check(key_code) {
+            Some(key) => {
+                for door in &self.doors {
+                    if door.get_door_id() == door_id {
+                        door.open_door();
+                        info!(
+                            "User {} with id {}, opened door {}",
+                            key.1.get_name(),
+                            key.0,
+                            door.get_door_id()
+                        );
+                        return Ok(DoorAuthResponse::Success);
+                    }
                 }
+                debug!(
+                    "Door ID for user was not found, User: {}, Door Id: {}",
+                    key.1.get_name(),
+                    key.1.get_door_id()
+                );
+                Ok(DoorAuthResponse::DoorIdNotFound)
             }
-            return Ok(DoorAuthResponse::DoorIdNotFound);
-        } else {
-            Ok(DoorAuthResponse::UserNotAuthorised)
+            None => {
+                debug!("Weigand payload was not valid, potentially an unathorised access attempt: {:?}", key_code);
+                Ok(DoorAuthResponse::KeyNotFound)
+            }
         }
-        
     }
 
     pub fn run() {}

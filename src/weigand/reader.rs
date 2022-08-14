@@ -4,7 +4,7 @@ use super::super::electronics::PinPull;
 use super::super::electronics::Trigger;
 use super::super::timer::Timer;
 use super::Weigand;
-use color_eyre::eyre::Result;
+use color_eyre::eyre::{eyre, Result};
 use tokio::sync::mpsc;
 use tokio::sync::mpsc::Receiver;
 use tracing::{debug, error};
@@ -71,7 +71,6 @@ impl WeigandReader {
                 },
             }
         }
-        //Ok(())
     }
 
     async fn get_payload(&mut self) -> Result<Transmission> {
@@ -83,21 +82,16 @@ impl WeigandReader {
         while bit_counter < 32 {
             match self.rx.recv().await {
                 Some(byte) => {
-                    let old_buffer = buffer;
                     buffer <<= 1;
                     if byte > 0 {
                         buffer |= 1;
                     }
                     bit_counter += 1;
                     timer.reset();
-                    debug!("B4: {}, AF: {}, Byte: {}", old_buffer, buffer, byte);
+                    debug!("Recv Byte: {}", byte);
                 }
                 None => {
-                    if bit_counter == 0 {
-                        // If no bits have been recieved then we should not advance the timer.
-                        timer.reset();
-                        debug!("No data, spin looping")
-                    }
+                    return Err(eyre!("channel closed unexpectadly"));
                 }
             }
             if timer.progress(std::time::Instant::now()) > max_duration {
