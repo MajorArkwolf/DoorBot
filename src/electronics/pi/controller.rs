@@ -1,7 +1,6 @@
 use crate::electronics::Callback;
 use crate::electronics::IElectronicController;
 use crate::electronics::Level;
-use crate::electronics::PinHandle;
 use crate::electronics::PinPull;
 use crate::electronics::Trigger;
 use color_eyre::eyre::Result;
